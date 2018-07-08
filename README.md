@@ -98,7 +98,7 @@ php artisan import:small-appliances
 
 ## Live demo
 
-* Url: http://my-favourite-appliances.josecelano.name
+* Url: http://my-favourite-appliances.hyve.software
 * Demo accounts: https://github.com/josecelano/ddd-laravel-sample/blob/master/database/seeds/Access/UserTableSeeder.php
 
 Open localhost:8000 in the browser.
