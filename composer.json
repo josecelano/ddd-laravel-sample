@@ -31,7 +31,7 @@
     "laravelcollective/html": "5.4.*",
     "league/event": "^2.1",
     "moneyphp/money": "^3.0",
-    "paquettg/php-html-parser": "^1.7",
+    "paquettg/php-html-parser": "^3.0",
     "webpatser/laravel-uuid": "^2.0",
     "yajra/laravel-datatables-oracle": "^7.0"
   },

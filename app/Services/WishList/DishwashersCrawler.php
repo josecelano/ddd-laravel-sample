@@ -15,7 +15,8 @@ class DishwashersCrawler
 {
     use DispatchesCommands;
 
-    const DISHWASHERS_URL = 'https://www.appliancesdelivered.ie/dishwashers';
+    const BASE_DOMAIN = 'https://www.kainos.lt';
+    const DISHWASHERS_URL = self::BASE_DOMAIN . '/indaploves';
 
     /**
      * @var ApplianceRepository
@@ -39,7 +40,6 @@ class DishwashersCrawler
     {
         $dom = new Dom;
         $pageIndex = 1;
-
         do {
             $this->loadPage($callbackAfterPageLoaded, $pageIndex, $dom);
             $products = $this->parseProductList($callbackAfterItemProcessed, $dom);
@@ -55,7 +55,8 @@ class DishwashersCrawler
     private function loadPage(callable $callbackAfterPageLoaded, $pageIndex, Dom $dom)
     {
         $pageUrl = $this->buildResultsPageUrl($pageIndex);
-        $dom->load(file_get_contents($pageUrl));
+        $dom->loadFromUrl($pageUrl);
+
         $callbackAfterPageLoaded($pageUrl);
     }
 
@@ -67,7 +68,7 @@ class DishwashersCrawler
     private function parseProductList(callable $callbackAfterItemProcessed, $dom)
     {
         /** @noinspection PhpUndefinedMethodInspection */
-        $products = $dom->find('div.search-results-product');
+        $products = $dom->find('.product-tile');
 
         /** @var Collection $product */
         foreach ($products as $product) {
@@ -107,7 +108,7 @@ class DishwashersCrawler
     private function parseProductTile($product)
     {
         /** @noinspection PhpUndefinedMethodInspection */
-        return $product->find('h4')->find('a')->innerHtml();
+        return $product->find('h3.title')->innerHtml();
     }
 
     /**
@@ -116,9 +117,7 @@ class DishwashersCrawler
      */
     private function parseProductDescription($product)
     {
-        /** @noinspection PhpUndefinedMethodInspection */
-        $description = $product->find('ul.result-list-item-desc-list')->innerHtml();
-        return empty($description) ? '' : "<ul>$description</ul>";
+        return '';
     }
 
     /**
@@ -128,7 +127,7 @@ class DishwashersCrawler
     private function parseProductUrl($product)
     {
         /** @noinspection PhpUndefinedMethodInspection */
-        return $product->find('h4')->find('a')->getAttribute('href');
+        return self::BASE_DOMAIN . $product->find('a')->getAttribute('href');
     }
 
     /**
@@ -138,7 +137,7 @@ class DishwashersCrawler
     private function parseProductId($product)
     {
         $productUrl = $this->parseProductUrl($product);
-        if (preg_match("/\/(\d+)$/", $productUrl, $matches)) {
+        if (preg_match("/(\d+)$/", $productUrl, $matches)) {
             return $matches[1];
         }
         return null;
@@ -151,7 +150,7 @@ class DishwashersCrawler
     private function parseProductImageUrl($product)
     {
         /** @noinspection PhpUndefinedMethodInspection */
-        return $product->find('div.product-image')->find('img.img-responsive')->getAttribute('src');
+        return $product->find('.image-container img')->getAttribute('src');
     }
 
     /**
@@ -161,9 +160,11 @@ class DishwashersCrawler
     private function parseProductPriceAmount($product)
     {
         /** @noinspection PhpUndefinedMethodInspection */
-        $price = $product->find('h3')->innerHtml();
-        $price = str_replace('&euro;', '', $price);
+        $price = $product->find('.price')->innerHtml();
+        $price = str_replace('€', '', $price);
         $price = str_replace(',', '', $price);
+        $price = str_replace('nuo', '', $price);
+        $price = trim($price);
         $priceInCents = round($price * 100);
         return $priceInCents;
     }

@@ -15,7 +15,8 @@ class SmallAppliancesCrawler
 {
     use DispatchesCommands;
 
-    const SMALL_APPLIANCES_URL = 'https://www.appliancesdelivered.ie/search/small-appliances';
+    const BASE_DOMAIN = 'https://www.kainos.lt';
+    const SMALL_APPLIANCES_URL = self::BASE_DOMAIN . '/smulki-buitine-technika';
 
     /**
      * @var ApplianceRepository
@@ -55,8 +56,7 @@ class SmallAppliancesCrawler
     private function loadPage(callable $callbackAfterPageLoaded, $pageIndex, Dom $dom)
     {
         $pageUrl = $this->buildResultsPageUrl($pageIndex);
-        $pageContent = file_get_contents($pageUrl);
-        $dom->load($pageContent);
+        $dom->loadFromUrl($pageUrl);
         $callbackAfterPageLoaded($pageUrl);
     }
 
@@ -68,7 +68,7 @@ class SmallAppliancesCrawler
     private function parseProductList(callable $callbackAfterItemProcessed, $dom)
     {
         /** @noinspection PhpUndefinedMethodInspection */
-        $products = $dom->find('div.search-results-product');
+        $products = $dom->find('.product-tile');
 
         /** @var Collection $product */
         foreach ($products as $product) {
@@ -108,7 +108,7 @@ class SmallAppliancesCrawler
     private function parseProductTile($product)
     {
         /** @noinspection PhpUndefinedMethodInspection */
-        return $product->find('h4')->find('a')->innerHtml();
+        return $product->find('h3.title')->innerHtml();
     }
 
     /**
@@ -117,9 +117,7 @@ class SmallAppliancesCrawler
      */
     private function parseProductDescription($product)
     {
-        /** @noinspection PhpUndefinedMethodInspection */
-        $description = $product->find('ul.result-list-item-desc-list')->innerHtml();
-        return empty($description) ? '' : "<ul>$description</ul>";
+        return '';
     }
 
     /**
@@ -129,7 +127,7 @@ class SmallAppliancesCrawler
     private function parseProductUrl($product)
     {
         /** @noinspection PhpUndefinedMethodInspection */
-        return $product->find('h4')->find('a')->getAttribute('href');
+       return self::BASE_DOMAIN . $product->find('a')->getAttribute('href');
     }
 
     /**
@@ -152,7 +150,7 @@ class SmallAppliancesCrawler
     private function parseProductImageUrl($product)
     {
         /** @noinspection PhpUndefinedMethodInspection */
-        return $product->find('div.product-image')->find('img.img-responsive')->getAttribute('src');
+        return $product->find('.image-container img')->getAttribute('src');
     }
 
     /**
@@ -162,9 +160,11 @@ class SmallAppliancesCrawler
     private function parseProductPriceAmount($product)
     {
         /** @noinspection PhpUndefinedMethodInspection */
-        $price = $product->find('h3')->innerHtml();
-        $price = str_replace('&euro;', '', $price);
+        $price = $product->find('.price')->innerHtml();
+        $price = str_replace('€', '', $price);
         $price = str_replace(',', '', $price);
+        $price = str_replace('nuo', '', $price);
+        $price = trim($price);
         $priceInCents = round($price * 100);
         return $priceInCents;
     }
